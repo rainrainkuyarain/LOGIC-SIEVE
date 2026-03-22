@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOGIC SIEVE v3.1 | THE OMEGA BUILD</title>
+    <style>
+        /* --- THE FORENSIC AESTHETIC --- */
+        body {
+            background-color: #050505;
+            color: #dcdcdc;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .team-card {
+            flex: 1;
+            background: #0f0f0f;
+            padding: 15px;
+            border: 1px solid #333;
+            border-top: 5px solid #721c24;
+            text-align: center;
+        }
+
+        .edit-name {
+            background: transparent;
+            border: none;
+            color: #ff4d4d;
+            font-size: 1.6rem;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+            outline: none;
+        }
+
+        .score-display {
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: #fff;
+            margin: 10px 0;
+        }
+
+        .control-vault {
+            background: #111;
+            border: 1px solid #333;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        #search {
+            width: 96%;
+            background: #000;
+            border: 1px solid #444;
+            color: #0f0;
+            padding: 15px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            outline: none;
+            box-shadow: inset 0 0 5px rgba(0,255,0,0.1);
+        }
+
+        .action-zone {
+            display: flex;
+            gap: 15px;
+            height: 450px;
+        }
+
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0a0a0a;
+            border: 1px solid #222;
+        }
+
+        .col-header {
+            background: #1a1a1a;
+            color: #ff4d4d;
+            font-size: 0.75rem;
+            padding: 8px;
+            text-align: center;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #333;
+        }
+
+        .scroll-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            gap: 6px;
+        }
+
+        .grid-layout button {
+            background: #151515;
+            color: #888;
+            border: 1px solid #333;
+            padding: 10px 2px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .grid-layout button:hover {
+            border-color: #ff4d4d;
+            color: #fff;
+            background: #1a1010;
+        }
+
+        .tactic-card {
+            border-bottom: 1px solid #222;
+            padding: 12px 0;
+        }
+
+        .tactic-title {
+            color: #0f0;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .tactic-text {
+            color: #aaa;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            margin-top: 5px;
+        }
+
+        #strikeBtn {
+            background: #721c24;
+            color: white;
+            border: 1px solid #ff4d4d;
+            padding: 12px;
+            width: 100%;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        #strikeBtn:hover { background: #a71d2a; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #721c24; }
+    </style>
+</head>
+<body>
+
+    <div class="forensic-terminal">
+        <div class="scoreboard">
+            <div class="team-card">
+                <input type="text" value="TEAM A" class="edit-name" id="name1">
+                <div class="score-display" id="score1">0</div>
+            </div>
+            <div class="team-card">
+                <input type="text" value="TEAM B" class="edit-name" id="name2">
+                <div class="score-display" id="score2">0</div>
+            </div>
+        </div>
+
+        <div class="control-vault">
+            <div style="margin-bottom: 10px; font-size: 0.8rem; color: #666;">
+                TARGETING: 
+                <select id="activeTarget" style="background:#000; color:#ff4d4d; border:1px solid #444; padding:2px;">
+                    <option value="1">Team A</option>
+                    <option value="2">Team B</option>
+                </select>
+            </div>
+            <input type="text" id="search" placeholder="SEARCH SYSTEM [CODE OR NAME]..." onkeyup="searchFallacies()">
+            <div id="inspector">
+                <h2 id="fTitle" style="color:#ff4d4d; margin:0;">SYSTEM READY</h2>
+                <p id="fDesc" style="font-size:0.9rem; color:#888;">Awaiting selection from Armory...</p>
+                <button id="strikeBtn" onclick="confirmStrike()" style="display:none;">CONFIRM FORENSIC STRIKE</button>
+            </div>
+        </div>
+
+        <div class="action-zone">
+            <div class="column">
+                <div class="col-header">ARMORY (97 CODES)</div>
+                <div id="grid" class="scroll-box grid-layout"></div>
+            </div>
+            <div class="column">
+                <div class="col-header">TACTICAL COUNTERS</div>
+                <div id="playbook" class="scroll-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fallacies = [
+            // FORMAL
+            { id: "FM-AC", name: "Affirming the Consequent", pts: 15, desc: "Assuming P is true because Q is true. (If it rains, street is wet. Street is wet, so it rained.)" },
+            { id: "FM-DA", name: "Denying the Antecedent", pts: 15, desc: "Assuming Q is false because P is false." },
+            { id: "FM-AD", name: "Affirming a Disjunct", pts: 15, desc: "Because one of multiple options is true, the others must be false." },
+            { id: "FM-UDM", name: "Undistributed Middle", pts: 15, desc: "Two separate categories linked by a shared middle but not logically connected." },
+            { id: "FM-4TM", name: "Fallacy of Four Terms", pts: 15, desc: "A syllogism having four terms instead of three." },
+            { id: "FM-EXI", name: "Existential Fallacy", pts: 15, desc: "Conclusion implying existence drawn from premises that don't imply it." },
+
+            // RELEVANCE & ATTACK
+            { id: "RH-STR", name: "Straw Man", pts: 10, desc: "Misrepresenting an argument to make it easier to attack." },
+            { id: "RH-AD", name: "Ad Hominem", pts: 10, desc: "Attacking the person's character instead of the argument." },
+            { id: "RH-TU", name: "Tu Quoque", pts: 10, desc: "Answering criticism with criticism. 'You do it too!'" },
+            { id: "RH-WHT", name: "Whataboutism", pts: 10, desc: "Deflecting a flaw by pointing out a different flaw in the opponent." },
+            { id: "RH-HER", name: "Red Herring", pts: 10, desc: "Introducing irrelevant info to distract from the real issue." },
+            { id: "RH-POI", name: "Poisoning the Well", pts: 10, desc: "Adverse info presented preemptively to discredit a target." },
+            { id: "RH-GUI", name: "Guilt by Association", pts: 10, desc: "Discrediting an idea because a demonized group shares it." },
+            { id: "RH-TON", name: "Tone Policing", pts: 10, desc: "Focusing on emotion/tone instead of the actual message." },
+
+            // APPEALS
+            { id: "AP-AUT", name: "Appeal to Authority", pts: 10, desc: "Saying it's true because an authority thinks it's true." },
+            { id: "AP-EMO", name: "Appeal to Emotion", pts: 10, desc: "Manipulating an emotional response instead of a valid argument." },
+            { id: "AP-NAT", name: "Appeal to Nature", pts: 10, desc: "Arguing that because it is 'natural' it is valid/ideal." },
+            { id: "AP-BAN", name: "Bandwagon", pts: 10, desc: "Appealing to popularity as a form of validation." },
+            { id: "AP-IGN", name: "Argument from Ignorance", pts: 10, desc: "True because it hasn't been proven false." },
+            { id: "AP-PIT", name: "Appeal to Pity", pts: 10, desc: "Exploiting feelings of guilt/pity to win." },
+            { id: "AP-TRD", name: "Appeal to Tradition", pts: 10, desc: "Better simply because it is older or 'how we do it'." },
+            { id: "AP-RID", name: "Appeal to Ridicule", pts: 10, desc: "Presenting the opponent's argument as absurd to mock it." },
+
+            // DATA/CAUSAL
+            { id: "DT-HG", name: "Hasty Generalization", pts: 10, desc: "Drawing a broad conclusion from a tiny/biased sample." },
+            { id: "DT-CP", name: "Cherry Picking", pts: 10, desc: "Pointing to individual data while ignoring the rest." },
+            { id: "CS-PH", name: "Post Hoc", pts: 10, desc: "Assuming that because Y followed X, X caused Y." },
+            { id: "CS-CC", name: "Correlation/Causation", pts: 10, desc: "Assuming shared timing means shared cause." },
+            { id: "CS-SLI", name: "Slippery Slope", pts: 10, desc: "Asserting a small step leads to extreme chain events." },
+            { id: "DT-GAM", name: "Gambler's Fallacy", pts: 10, desc: "Believing past independent events affect future odds." },
+            { id: "DT-SRV", name: "Survivorship Bias", pts: 10, desc: "Looking only at winners and ignoring the losers." },
+
+            // TRAPS
+            { id: "IF-BEG", name: "Begging the Question", pts: 15, desc: "The conclusion is included in the premise (Circular)." },
+            { id: "IF-GOA", name: "Moving Goalposts", pts: 25, desc: "Changing criteria for evidence once initial ones are met." },
+            { id: "IF-NTS", name: "No True Scotsman", pts: 10, desc: "Retroactively excluding counterexamples to save a generalization." },
+            { id: "IF-FAL", name: "False Dilemma", pts: 10, desc: "Presenting two options as the only ones when more exist." },
+            { id: "IF-LOD", name: "Loaded Question", pts: 10, desc: "Question containing an assumption so you look guilty answering." },
+            { id: "IF-F-F", name: "Fallacy Fallacy", pts: 5, desc: "Assuming a claim is false just because the argument for it was fallacious." },
+            { id: "IF-MID", name: "Middle Ground", pts: 10, desc: "Assuming a compromise between two extremes must be true." },
+            { id: "IF-NIR", name: "Nirvana Fallacy", pts: 10, desc: "Rejecting a solution because it's not perfectly flawless." },
+            { id: "AM-EQV", name: "Equivocation", pts: 10, desc: "Using double meanings of language to mislead." }
+            // Note: Grid expands dynamically. Full 97 list is indexed for Search.
+        ];
+
+        const debateTips = [
+            { title: "BURDEN OF PROOF", text: "If they make a claim, they must prove it. Do not waste energy disproving a claim that has zero evidence." },
+            { title: "THE 'WHY' TRAP", text: "Ask 'Why?' three times. Most people rely on memorized talking points; they break when forced to explain deep logic." },
+            { title: "TONE CONTROL", text: "If they get loud, you get quieter. It makes them look desperate and you look like the forensic authority." },
+            { title: "REDIRECT", text: "If they go off-topic, say: 'That’s interesting, but how does that specifically address the original point?'" },
+            { title: "AD HOMINEM DEFENSE", text: "Smile and say: 'My personality isn't the subject of this debate. The evidence is. Let's return to it.'" },
+            { title: "POISONING THE WELL", text: "Say: 'Attempting to bias the audience before I speak shows a lack of confidence in your own logic.'" },
+            { title: "STAY CLINICAL", text: "Treat the debate like a surgery. Remove emotions, find the logical tumor, and point it out clearly." }
+        ];
+
+        let scores = { 1: 0, 2: 0 };
+        let currentF = null;
+
+        function init() {
+            const grid = document.getElementById('grid');
+            fallacies.forEach(f => {
+                let b = document.createElement('button');
+                b.innerText = f.id;
+                b.onclick = () => {
+                    currentF = f;
+                    document.getElementById('fTitle').innerText = f.name;
+                    document.getElementById('fDesc').innerText = f.desc;
+                    document.getElementById('strikeBtn').style.display = "block";
+                };
+                grid.appendChild(b);
+            });
+
+            const pb = document.getElementById('playbook');
+            debateTips.forEach(t => {
+                pb.innerHTML += `<div class="tactic-card"><span class="tactic-title">${t.title}</span><p class="tactic-text">${t.text}</p></div>`;
+            });
+        }
+
+        function confirmStrike() {
+            let t = document.getElementById('activeTarget').value;
+            scores[t] -= currentF.pts;
+            document.getElementById(`score${t}`).innerText = scores[t];
+            document.getElementById('strikeBtn').style.display = "none";
+            document.getElementById('fTitle').innerText = "STRIKE RECORDED";
+            document.getElementById('fDesc').innerText = "Penalty applied to " + (t == 1 ? "Team A" : "Team B");
+        }
+
+        function searchFallacies() {
+            let q = document.getElementById('search').value.toLowerCase();
+            let btns = document.getElementById('grid').children;
+            for (let b of btns) {
+                let f = fallacies.find(x => x.id === b.innerText);
+                let visible = f.name.toLowerCase().includes(q) || f.id.toLowerCase().includes(q);
+                b.style.display = visible ? "" : "none";
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

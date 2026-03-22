@@ -27,7 +27,7 @@ if (!basePath) {
 }
 
 export default defineConfig({
-  base: './',
+  base: '/LOGIC-SIEVE/',
   base: basePath,
   plugins: [
     react(),

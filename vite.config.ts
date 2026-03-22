@@ -27,6 +27,7 @@ if (!basePath) {
 }
 
 export default defineConfig({
+  base: './',
   base: basePath,
   plugins: [
     react(),
